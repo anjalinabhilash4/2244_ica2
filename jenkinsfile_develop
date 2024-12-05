@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+    stages {
+        stage('Cleanup') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Clone Git Repo') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Clone from repository') {
+            steps {
+                git url: 'https://github.com/anjalinabhilash4/2244_ica2.git', branch: 'develop', credentialsId: 'GIT'
+            }
+        }
+
+
+stage('Build and run docker image') {
+            steps {
+                sh 'docker build -t anjalinabhilash/myapp:latest .'
+                sh 'docker stop myapp || true && docker rm myapp || true'
+                sh "docker tag anjalinabhilash/myapp:latest anjalinabhilash/myapp:develop-${env.BUILD_ID}"
+                sh 'docker run --name myapp -d -p 8081:80 anjalinabhilash/myapp:latest'
+            }
+        }
+
+
+        stage('Build and Push') {
+            steps {
+                echo 'Building..'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh '''
+                            docker login -u ${USERNAME} -p ${PASSWORD}
+                        '''
+                    }
+            }
+        }
+        stage('testing') {
+            steps {
+                sh 'curl -I 54.145.136.40:8080'
+            }
+        }
+       stage('pushing') {
+            steps {
+                  sh "docker push anjalinabhilash/myapp:latest"
+                  sh "docker push anjalinabhilash/myapp:develop-${env.BUILD_ID}"
+            }
+        }
+    }
+}
+

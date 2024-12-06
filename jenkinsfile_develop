@@ -41,7 +41,7 @@ stage('Build and run docker image') {
         }
         stage('testing') {
             steps {
-                sh 'curl -I 54.210.131.212:8080'
+                sh 'curl -I 54.145.136.40:8080'
             }
         }
        stage('pushing') {

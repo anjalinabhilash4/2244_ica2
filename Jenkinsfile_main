@@ -1,0 +1,30 @@
+pipeline {
+    agent any
+    stages {
+        stage('Pull Image') {
+            steps {
+                sshagent(['docker-server']) {
+                    sh 'ssh root@54.210.131.212 "docker pull anjalinabhilash/static-website-nginx:latest"'
+                }
+            }
+        }
+
+        stage('Run Container') {
+            steps {
+                sshagent(['docker-server']) {
+                    sh '''
+                        ssh root@54.210.131.212 "docker stop main-container || true"
+                        ssh root@54.210.131.212 "docker rm main-container || true"
+                        ssh root@54.210.131.212 "docker run --name main-container -d -p 8082:80 anjalinabhilash/static-website-nginx:latest"
+                    '''
+                }
+            }
+        }
+
+        stage('Test Website') {
+            steps {
+                sh 'curl -I http://54.210.131.212:8082 || exit 1'
+            }
+        }
+    }
+}
